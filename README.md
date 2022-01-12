@@ -1,6 +1,6 @@
 # Rust Mini Project: Interactive Bill Manager
 - Its a mini project to solidify my understanding of the basic Rust concepts.
-- This is an activity in the Rust Programming Course from [ZTM Academy] (https://academy.zerotomastery.io/p/learn-rust)
+- This is an activity in the Rust Programming Course from the [ZTM Academy](https://academy.zerotomastery.io/p/learn-rust)
 
 ## About
 - Menu driven command line application
@@ -32,7 +32,7 @@
 > The user stories/requirements are split into stages.
 > Fully implement each stage as a complete working program
 > before making changes for the next stage. Leverage the
-> compiler by using `cargo check --bin p1` when changing
+> compiler by using `cargo check --bin bill_manager` when changing
 > between stages to help identify adjustments that need
 > to be made.
 
