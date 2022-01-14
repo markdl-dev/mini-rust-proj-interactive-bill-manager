@@ -61,3 +61,82 @@
 >   the functionality for that menu in isolation.
 > * A vector is the easiest way to store the bills at stage 1, but a
 >   hashmap will be easier to work with at stages 2 and 3.
+
+## Development Steps
+
+### Create a support function for managing user input
+- create string buffer
+- loop over the input using `io` module from the standard `std` library
+    - if user does something wrong or if there’s an error in the terminal then we just loop over until we get some valid data
+    - trim the whitespace on the terminal entry (when user press enter there’s going to be a new line at the end) from the `.read_line`
+        - turn it to an owned string because we are returning an Optional owned String on our function
+    - if input is empty return `None`, else we get the input which is an Option<String>
+```
+use std::io;
+
+fn get_input() -> Option<String> {
+    let mut buff = String::new();
+    while io::stdin().read_line(&mut buff).is_err() {
+        println!("Please enter your data again.");
+    }
+    let input = buff.trim().to_owned();
+    if input == "" {
+        return None;
+    } else {
+        return Some(input);
+    }
+}
+```
+
+### Create the main menu loop
+- create an `Enum` for our main menu
+    - add bill and view bill first for our first user story
+- create a function for the our MainMenu enum to take input from the user and return a `MainMenu` variant
+    - this will act as a check to see if our user enters a menu that is correct or incorrect.
+    - if its correct we get the `Option<MainMenu>` back, else we get `None` for bad input
+    - `match` on the `input` and let’s use a number system for selection
+        - if they enter anything else, return `None`
+- create another function to display the menu
+- create the main menu loop in the main function
+    - show the menu
+    - get user input
+        - for debugging purposes, we can use expect(). when the user hits enter with nothing the program will jut terminate with the message.
+    - do a match on the from_str() when it takes in the user input, so we can check which option the user selected
+        - for now we’ll use the `()` type when a valid Menu is selected
+            - `()` type just means nothing. to be updated later
+        - just return when invalid Menu is selected
+```
+enum MainMenu {
+    AddBill,
+    ViewBill,
+}
+
+impl MainMenu {
+    fn from_str(input: &str) -> Option<MainMenu> {
+        match input {
+            "1" => Some(MainMenu::AddBill),
+            "2" => Some(MainMenu::ViewBill),
+            _ => None,
+        }
+    }
+
+    fn show() {
+        println!("");
+        println!(" == Bill Manager ==");
+        println!("1. Add Bill");
+        println!("2. View Bill");
+    }
+}
+
+fn main() {
+    loop {
+        MainMenu::show();
+        let user_input = get_input().expect("no data entered");
+        match MainMenu::from_str(&user_input) {
+            Some(MainMenu::AddBill) => (),
+            Some(MainMenu::ViewBill) => (),
+            None => return,
+        }
+    }
+}
+```
