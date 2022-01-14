@@ -71,7 +71,7 @@
     - trim the whitespace on the terminal entry (when user press enter there’s going to be a new line at the end) from the `.read_line`
         - turn it to an owned string because we are returning an Optional owned String on our function
     - if input is empty return `None`, else we get the input which is an Option<String>
-```
+```rust
 use std::io;
 
 fn get_input() -> Option<String> {
@@ -105,7 +105,7 @@ fn get_input() -> Option<String> {
         - for now we’ll use the `()` type when a valid Menu is selected
             - `()` type just means nothing. to be updated later
         - just return when invalid Menu is selected
-```
+```rust
 enum MainMenu {
     AddBill,
     ViewBill,
