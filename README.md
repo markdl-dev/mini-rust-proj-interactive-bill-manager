@@ -71,7 +71,7 @@
     - trim the whitespace on the terminal entry (when user press enter there’s going to be a new line at the end) from the `.read_line`
         - turn it to an owned string because we are returning an Optional owned String on our function
     - if input is empty return `None`, else we get the input which is an Option<String>
-```
+```rust
 use std::io;
 
 fn get_input() -> Option<String> {
@@ -105,7 +105,7 @@ fn get_input() -> Option<String> {
         - for now we’ll use the `()` type when a valid Menu is selected
             - `()` type just means nothing. to be updated later
         - just return when invalid Menu is selected
-```
+```rust
 enum MainMenu {
     AddBill,
     ViewBill,
@@ -137,6 +137,60 @@ fn main() {
             Some(MainMenu::ViewBill) => (),
             None => return,
         }
+    }
+}
+```
+
+### Data Structures
+- We want to be able to add bills with name and amount owed
+- create Bill struct
+    - name
+    - amount
+    - add derive with Debug and Clone traits
+        - Debug - so we can easily print out the struct on the terminal
+        - Clone - will allow us to make copies of the structure
+- create Bills struct
+    - inner - vector that contains bills
+- implement functionality on the Bills struct
+    - `new()` - creates new bills struct, set inner to an empty vector `vec![]`
+    - `add(&mut self, bill: Bill)` - add bills
+        - `&mut self`
+            - takes in a mutable reference to self
+                - so we can access `inner` value mutably, which means we can modify it
+        - `bill: Bill`
+            - takes in a bill
+                - we take an owned Bill, we move this Bill to the `inner` `Bill` vector
+        - push the bill to the vector
+    - `get_all(&self)` `-> Vec<&Bill>`
+        - takes a reference to `&self` so it can access the bills
+        - return a new Vector that has reference to the existing bills
+            - so we need to borrow the Bills, that way the calling function can print them without any issues
+            - to get a Vector of the existing Bills in borrowed form(`&Bill`)
+                - iterate over the Bills and `collect()` it
+                - because when we call `iter()` it is automatically borrowed
+    
+```rust
+#[derive(Debug, Clone)]
+pub struct Bill {
+    name: String,
+    amount: f64,
+}
+
+pub struct Bills {
+    inner: Vec<Bill>,
+}
+
+impl Bills {
+    fn new() -> Self {
+        Self { inner: vec![] }
+    }
+
+    fn add(&mut self, bill: Bill) {
+        self.inner.push(bill)
+    }
+
+    fn get_all(&self) -> Vec<&Bill> {
+        self.inner.iter().collect()
     }
 }
 ```
