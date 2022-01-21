@@ -194,3 +194,125 @@ impl Bills {
     }
 }
 ```
+
+### Adding & Viewing Bills
+- create the menus to expose the functionalities to the user
+- create a new module named menu
+    - because we know we will be having multiple menus
+    - let's put all the menus in a single module so they are grouped together and easily accessible
+    - import our structures and function inside the module
+        - a module does not have access to things outside
+- create a new function inside the module that will handle the add bill menu `add_bill`
+    - set it as pub so we can access it outside the menu module
+    - it will accept a mutable reference to a Bill structure `&mut Bills`
+        - so we can add new Bills to the structure
+    - print out message so the user knows what to enter
+        - "Bill Name"
+    - get the `name` using the `get_input()` function we defined earlier
+        - do a `match` on it since it returns an Option
+            - if we get input then return it, and that will get populated to the `name`
+            - if we don't get input we just `return` out of the function with nothing
+        - do the same for the `amount`
+            - but since our amount is of type float, we will need to convert this. we will create a new function to do this. we will re-factor this later.
+    - create the `Bill` and set the `name` and `amount`
+        - if the name of the fields matches the name of the variables, we don't need to assign the field name.
+    - add this new Bill to the bills structure
+    - print out message "Bill Added"
+- create a new function that will handle the bill amount input `get_bill_amount()`
+    - returns an `Option<f64>` instead of a `String`
+    - this will include the conversion of the `String` from `get_input()`
+    - this will also be an infinite menu (so we ask again when user enters a wrong input)
+    - print what needs to be entered here "Amount"
+    - get the input using the `get_input()` function
+        - do a `match` to get if there is an input
+        - if there is no input return `None`
+    - if our `&input` is empty or nothing, we also return `None`
+    - parse the `String` to `f64`
+        - we use `Result<f64, _>` and the `_` means we let Rust decide the error type.
+        - we use `input.parse()`, `.parse()` will turn it into the appropriate data type for our example it will turn it into `f64`
+        - do a `match` on the parsed input
+            - if the Result returns Ok and have an amount, we return the amount as an option
+            - if the Result returns an Err, we get an error and we ignore it cause we are not concern about the error message.
+                - we create our own message that the user will just need to try again
+- we need to modify our menu module
+    - we need to import now this new function get_bill_amount()
+    - update `add_bill` function
+        - change the function that we used in amount to get the input. from `get_input()` to `get_bill_amount()` so the amount now will be an `f64` instead of a `String`
+- next we create the menu for viewing the bills
+    - we add a new function for the view bills menu in the menu module `view_bills`
+        - takes in a reference to our `Bills` structure
+        - no return type because we are just going to print information
+        - loop through the bills using the `.get_all()` function which returns a vector references of bills
+        - print the bill using the debug token `println!("{:?}", bill}` for now we just print out all the information of the bill.
+- next we utilize these menus in our main menu loop
+    - create a new bills structure using the `Bills::new()` we created
+    - in the main menu loop, we now use our menu functions from the menu module
+
+```rust
+fn get_bill_input() -> Option<f64> {
+    println!("Amount");
+
+    loop {
+        let input = match get_input() {
+            Some(input) => input,
+            None => return None,
+        };
+
+        if &input == "" {
+            return None;
+        }
+
+        let parsed_input: Result<f64, _> = input.parse();
+        match parsed_input {
+            Ok(parsed_input) => return Some(parsed_input),
+            Err(_) => println!("Please enter a number"),
+        }
+    }
+}
+```
+
+```rust
+mod menu {
+    use crate::{get_bill_input, get_input, Bill, Bills};
+
+    pub fn add_bill(bills: &mut Bills) {
+        println!("Bill Name");
+
+        let name = match get_input() {
+            Some(input) => input,
+            None => return,
+        };
+
+        let amount = match get_bill_input() {
+            Some(input) => input,
+            None => return,
+        };
+
+        let bill = Bill { name, amount };
+        bills.inner.push(bill);
+
+        println!("Bill Added");
+    }
+
+    pub fn view_bills(bills: &Bills) {
+        for bill in bills.get_all() {
+            println!("{:?}", bill)
+        }
+    }
+}
+```
+
+```rust
+fn main() {
+    let mut bills = Bills::new();
+    loop {
+        MainMenu::show();
+        let user_input = get_input().expect("no data entered");
+        match MainMenu::from_str(&user_input) {
+            Some(MainMenu::AddBill) => menu::add_bill(&mut bills),
+            Some(MainMenu::ViewBill) => menu::view_bills(&bills),
+            None => return,
+        }
+    }
+}
+```
