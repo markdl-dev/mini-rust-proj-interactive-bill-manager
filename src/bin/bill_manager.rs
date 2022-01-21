@@ -1,13 +1,43 @@
 use std::io;
 
 fn main() {
+    let mut bills = Bills::new();
     loop {
         MainMenu::show();
         let user_input = get_input().expect("no data entered");
         match MainMenu::from_str(&user_input) {
-            Some(MainMenu::AddBill) => (),
-            Some(MainMenu::ViewBill) => (),
+            Some(MainMenu::AddBill) => menu::add_bill(&mut bills),
+            Some(MainMenu::ViewBill) => menu::view_bills(&bills),
             None => return,
+        }
+    }
+}
+
+mod menu {
+    use crate::{get_bill_input, get_input, Bill, Bills};
+
+    pub fn add_bill(bills: &mut Bills) {
+        println!("Bill Name");
+
+        let name = match get_input() {
+            Some(input) => input,
+            None => return,
+        };
+
+        let amount = match get_bill_input() {
+            Some(input) => input,
+            None => return,
+        };
+
+        let bill = Bill { name, amount };
+        bills.inner.push(bill);
+
+        println!("Bill Added");
+    }
+
+    pub fn view_bills(bills: &Bills) {
+        for bill in bills.get_all() {
+            println!("{:?}", bill)
         }
     }
 }
@@ -68,5 +98,26 @@ fn get_input() -> Option<String> {
         return None;
     } else {
         return Some(input);
+    }
+}
+
+fn get_bill_input() -> Option<f64> {
+    println!("Amount");
+
+    loop {
+        let input = match get_input() {
+            Some(input) => input,
+            None => return None,
+        };
+
+        if &input == "" {
+            return None;
+        }
+
+        let parsed_input: Result<f64, _> = input.parse();
+        match parsed_input {
+            Ok(parsed_input) => return Some(parsed_input),
+            Err(_) => println!("Please enter a number"),
+        }
     }
 }
