@@ -316,3 +316,183 @@ fn main() {
     }
 }
 ```
+
+### Remove Bills
+- we want to be able to remove bills from the existing structure
+- let’s now move to working with Hashmaps
+    - import Hashmap from the standard library `std::collections::Hashmap`
+        - update our `Bills` struct
+            - change the `inner` field to `Hashmap`
+                - key will be the name of the bill
+        - update `Bills::new()`
+            - change the inner field to a new Hahmap
+                - `HashMap::new()`
+        - update `Bills::add()`
+            - change push (vector) to insert (HashMap)
+            - insert(bill.name.to_string(), bill)
+        - update `Bills::get_all()`
+            - instead of iterating thru the entire collection, we’ll need to access the `inner` and use the `values()` function
+                - which only accesses the values which are the bills and ignores the keys
+                - and if we `collect()` those as a vector it should work
+- let’s now create the remove bill function inside the `impl Bill`
+    - add the `remove` function
+    - takes in a mutable reference to self (`&mut self`) since we are making modifictions
+    - takes in the key which is the name of the bill (name: &str)
+    - we will return a bool to indicate whether or not the deletion was successful
+    - call the `remove()`  function of the inner HashMap, using the name of the bill as key
+        - the `remove()` function actually moves the value out of the HashMap completely and gives it back to us
+        - for the type of the value we will actually get an Option and will look like this
+            
+            `let a: Option<Bill> = self.inner.remove(name)`
+            
+        - but since we do not need the value, and we just need to return a bool we will use the `.is_some()`
+            
+            `self.inner.remove(name).is_some()`
+            
+            - `true` if we have value
+            - `false` if removing failed
+- create the menu that will call the remove bill function
+    - in the menu module `mod menu {}`
+    - create a new function `remove_bill`
+    - takes in a mutable reference to bills (`&mut Bills`)
+    - we’ll need to display the bills to the user so they know which to delete
+    - print a message to the user so they know what to do next “Enter bill name to remove”
+    - get the name using the `get_input` function
+        - if we get a name, we use it
+        - if `None`, we just exit the function
+    - we try to delete the bill using our `bills.remove` function
+        - if it was successful we print a message “bill removed”
+        - if it was unsuccessful we print a message “bill not found”
+- integrate the remove menu to our main menu
+    - add first a new variant of the remove bill in our MainMenu enum `MainMenu::RemoveBill`
+    - on the `impl MainMenu`
+        - add it on the `from_str` function to ‘3’
+        - expose the menu to the user update the `show()` function
+    - update our main menu loop, use the `MainMenu::RemoveBill and menu::remove_bills(&mut bills)`
+
+```rust
+use std::collections::HashMap;
+use std::io;
+```
+
+```rust
+pub struct Bills {
+    inner: HashMap<String, Bill>,
+}
+```
+
+```rust
+impl Bills {
+    fn new() -> Self {
+        Self {
+            inner: HashMap::new(),
+        }
+    }
+
+    fn add(&mut self, bill: Bill) {
+        self.inner.insert(bill.name.to_string(), bill);
+    }
+
+    fn remove(&mut self, name: &str) -> bool {
+        self.inner.remove(name).is_some()
+    }
+
+    fn get_all(&self) -> Vec<&Bill> {
+        self.inner.values().collect()
+    }
+}
+```
+
+```rust
+mod menu {
+    use crate::{get_bill_input, get_input, Bill, Bills};
+
+    pub fn add_bill(bills: &mut Bills) {
+        println!("Bill Name");
+
+        let name = match get_input() {
+            Some(input) => input,
+            None => return,
+        };
+
+        let amount = match get_bill_input() {
+            Some(input) => input,
+            None => return,
+        };
+
+        let bill = Bill { name, amount };
+        bills.add(bill);
+
+        println!("Bill Added");
+    }
+
+    pub fn remove_bill(bills: &mut Bills) {
+        for bill in bills.get_all() {
+            println!("{:?}", bill)
+        }
+        println!("Enter bill name to remove");
+
+        let name = match get_input() {
+            Some(input) => input,
+            None => return,
+        };
+
+        if bills.remove(&name) {
+            println!("bill removed")
+        } else {
+            println!("bill not found")
+        }
+    }
+
+    pub fn view_bills(bills: &Bills) {
+        for bill in bills.get_all() {
+            println!("{:?}", bill)
+        }
+    }
+}
+```
+
+```rust
+enum MainMenu {
+    AddBill,
+    RemoveBill,
+    ViewBill,
+}
+```
+
+```rust
+impl MainMenu {
+    fn from_str(input: &str) -> Option<MainMenu> {
+        match input {
+            "1" => Some(MainMenu::AddBill),
+            "2" => Some(MainMenu::ViewBill),
+            "3" => Some(MainMenu::RemoveBill),
+            _ => None,
+        }
+    }
+
+    fn show() {
+        println!("");
+        println!(" == Bill Manager ==");
+        println!("1. Add Bill");
+        println!("2. View Bill");
+        println!("3. Remove Bill");
+    }
+}
+```
+
+```rust
+fn main() {
+    let mut bills = Bills::new();
+    loop {
+        MainMenu::show();
+        let user_input = get_input().expect("no data entered");
+        match MainMenu::from_str(&user_input) {
+            Some(MainMenu::AddBill) => menu::add_bill(&mut bills),
+            Some(MainMenu::RemoveBill) => menu::remove_bill(&mut bills),
+            Some(MainMenu::ViewBill) => menu::view_bills(&bills),
+            None => return,
+        }
+    }
+}
+```
