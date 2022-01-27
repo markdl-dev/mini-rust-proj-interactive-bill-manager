@@ -2,17 +2,23 @@ use std::collections::HashMap;
 use std::io;
 
 fn main() {
+    run_program();
+}
+
+fn run_program() -> Option<()> {
     let mut bills = Bills::new();
     loop {
         MainMenu::show();
-        let user_input = get_input().expect("no data entered");
+        let user_input = get_input()?;
         match MainMenu::from_str(&user_input) {
             Some(MainMenu::AddBill) => menu::add_bill(&mut bills),
             Some(MainMenu::RemoveBill) => menu::remove_bill(&mut bills),
             Some(MainMenu::ViewBill) => menu::view_bills(&bills),
-            None => return,
+            Some(MainMenu::UpdateBill) => menu::update_bill(&mut bills),
+            None => break,
         }
     }
+    None
 }
 
 mod menu {
@@ -60,6 +66,29 @@ mod menu {
             println!("{:?}", bill)
         }
     }
+
+    pub fn update_bill(bills: &mut Bills) {
+        for bill in bills.get_all() {
+            println!("{:?}", bill)
+        }
+
+        println!("Enter bill to update");
+
+        let name = match get_input() {
+            Some(name) => name,
+            None => return,
+        };
+        let amount = match get_bill_input() {
+            Some(amount) => amount,
+            None => return,
+        };
+
+        if bills.update(&name, amount) == true {
+            println!("updated")
+        } else {
+            println!("bill not found")
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -90,12 +119,23 @@ impl Bills {
     fn get_all(&self) -> Vec<&Bill> {
         self.inner.values().collect()
     }
+
+    fn update(&mut self, name: &str, amount: f64) -> bool {
+        match self.inner.get_mut(name) {
+            Some(bill) => {
+                bill.amount = amount;
+                return true;
+            }
+            None => return false,
+        }
+    }
 }
 
 enum MainMenu {
     AddBill,
     RemoveBill,
     ViewBill,
+    UpdateBill,
 }
 
 impl MainMenu {
@@ -104,6 +144,7 @@ impl MainMenu {
             "1" => Some(MainMenu::AddBill),
             "2" => Some(MainMenu::ViewBill),
             "3" => Some(MainMenu::RemoveBill),
+            "4" => Some(MainMenu::UpdateBill),
             _ => None,
         }
     }
@@ -114,6 +155,7 @@ impl MainMenu {
         println!("1. Add Bill");
         println!("2. View Bill");
         println!("3. Remove Bill");
+        println!("4. Update Bill");
     }
 }
 

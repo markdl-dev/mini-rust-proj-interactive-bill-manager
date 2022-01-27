@@ -496,3 +496,174 @@ fn main() {
     }
 }
 ```
+
+### Editing Bills
+- update Bills struct impl
+    - create a new function `update` to edit the bills
+    - takes in a mutable reference to self, because we are changing a data that is within
+    - takes in name of the bill
+    - takes in the new amount of the bill
+    - returns a `bool` so we know if the name was typed in correctly
+        - if name was found, bill gets updated and return true
+        - if not found, we just return false
+    - match on the `inner` Hashmap and use `get_mut()` function
+        - `get_mut()`
+            - gets a mutable reference on the item that we want to find
+            - this is what we’ll use if we want to mutate an item that exists within a Hashmap
+        - if bill is found `Some(bill)`, we get the bill and set the amount to the new amount and return true
+        - if the bill is not found `None`, we just return false
+- next expose the update functionality to the menu
+    - update menu module
+        - add new function `update_bill`
+            - takes in a mutable reference to bills cause we are making changes
+            - display the bills, so the user knows which bill to update
+            - print message “Enter bill to update”
+            - get the name from the user using get_input()
+                - if there is a name, we use it
+                - if there is no name, we `return` and exit out of the function
+            - get the amount from the user using the `get_bill_amount()` function
+                - if there is an amount, we use it
+                - if there is no amount or incorrect, we `return` and exit out of the function
+            - we try to update the bill using the `bills.update()` function
+                - if successful we print “updated”
+                - if not and did not find the bill with the name, we print “bill not found”
+- next integrate this menu to our main menu
+    - add a new variant to our enum `MainMenu`
+        - `UpdateBill`
+    - add it on the `match` arm of the `MainMenu` `from_str()`
+    - display it to the user on the `MainMenu` `show()`
+    - add the option to the `match` arm on the `MainMenu` loop in the `main` function
+
+```rust
+impl Bills {
+    ...
+
+    fn update(&mut self, name: &str, amount: f64) -> bool {
+        match self.inner.get_mut(name) {
+            Some(bill) => {
+                bill.amount = amount;
+                return true;
+            }
+            None => return false,
+        }
+    }
+}
+```
+
+```rust
+mod menu {
+		...
+
+    pub fn update_bill(bills: &mut Bills) {
+        for bill in bills.get_all() {
+            println!("{:?}", bill)
+        }
+
+        println!("Enter bill to update");
+
+        let name = match get_input() {
+            Some(name) => name,
+            None => return,
+        };
+        let amount = match get_bill_input() {
+            Some(amount) => amount,
+            None => return,
+        };
+
+        if bills.update(&name, amount) == true {
+            println!("updated")
+        } else {
+            println!("bill not found")
+        }
+    }
+}
+```
+
+```rust
+enum MainMenu {
+    ...
+    UpdateBill,
+}
+
+impl MainMenu {
+    fn from_str(input: &str) -> Option<MainMenu> {
+        match input {
+            ...
+            "4" => Some(MainMenu::UpdateBill),
+            _ => None,
+        }
+    }
+
+    fn show() {
+       ...
+        println!("4. Update Bill");
+    }
+}
+```
+
+```rust
+fn main() {
+    let mut bills = Bills::new();
+        loop {
+            MainMenu::show();
+            let user_input = get_input().expect("no data entered");
+            match MainMenu::from_str(&user_input) {
+                ...
+                Some(MainMenu::UpdateBill) => menu::update_bill(&mut bills),
+                None => return,
+            }
+        }
+    }
+```
+
+### Fix the error message when exiting the app
+> thread 'main' panicked at 'no data entered', src/bin/bill_manager.rs:8:38                │
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+> 
+- what we can do here is to add the question mark operator ? on the `get_input()` since it returns an option
+    - but the ? question mark operator only works if the containing function e.g. (main) also returns an `Option`
+    - since this is a `main` function and it does no return anything, we cannot use the question mark ? operator here
+
+```rust
+fn main() {
+    let mut bills = Bills::new();
+    loop {
+        MainMenu::show();
+        let user_input = get_input().expect("no data entered");
+        match MainMenu::from_str(&user_input) {
+		...
+```
+
+- what we can do is to create another function that returns an option and just move everything into it
+    - create new function `run_program`
+        - returns an `Option` with just a unit type. `Option<()>`
+            - unit type - just means nothing
+        - copy out all the code in the main function
+        - in the `get_input()` function instead of just .`expect()` (which terminates the program when user gets error), we now can use the question mark operator ? `get_input()?`
+            - question mark operator ? will extract the data from the `get_input()` and place it on the variable
+            - if the user did not enter anything it will just return the function with `None`, then it will be fine
+        - in the `match` arm selection Menu, when the user enters something invalid, instead of just returning and bailing out of the program we just exit out of the loop with `break` then the function will ends and the program will exit.
+        - in the end of the function, just return `None`
+    - on the main, just call `run_program()`
+
+```rust
+fn main() {
+    run_program();
+}
+
+fn run_program() -> Option<()> {
+    let mut bills = Bills::new();
+    loop {
+        MainMenu::show();
+        let user_input = get_input()?;
+        match MainMenu::from_str(&user_input) {
+            Some(MainMenu::AddBill) => menu::add_bill(&mut bills),
+            Some(MainMenu::RemoveBill) => menu::remove_bill(&mut bills),
+            Some(MainMenu::ViewBill) => menu::view_bills(&bills),
+            Some(MainMenu::UpdateBill) => menu::update_bill(&mut bills),
+            None => break,
+        }
+    }
+    None
+}
+```
